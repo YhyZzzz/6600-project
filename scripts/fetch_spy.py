@@ -1,6 +1,7 @@
 import argparse
 import os
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 import pandas as pd
@@ -11,6 +12,7 @@ from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[1]
+ET = ZoneInfo("America/New_York")
 
 
 def parse_args():
@@ -45,15 +47,15 @@ def main():
         raise SystemExit("Set APCA_API_KEY_ID and APCA_API_SECRET_KEY in env or .env")
 
     client = StockHistoricalDataClient(key, secret)
-    start = datetime.fromisoformat(args.start).replace(tzinfo=timezone.utc)
-    end = datetime.fromisoformat(args.end).replace(tzinfo=timezone.utc) + timedelta(days=1)
+    start = datetime.fromisoformat(args.start).replace(tzinfo=ET)
+    end = datetime.fromisoformat(args.end).replace(tzinfo=ET) + timedelta(days=1)
     # free plan cannot query SIP data from the latest 15 minutes
     end = min(end, datetime.now(timezone.utc) - timedelta(minutes=16))
 
     frames = []
     for year in range(start.year, end.year + 1):
-        s = max(start, datetime(year, 1, 1, tzinfo=timezone.utc))
-        e = min(end, datetime(year + 1, 1, 1, tzinfo=timezone.utc))
+        s = max(start, datetime(year, 1, 1, tzinfo=ET))
+        e = min(end, datetime(year + 1, 1, 1, tzinfo=ET))
         df = fetch_year(client, args, s, e)
         print(f"{year}: {len(df)} bars")
         if not df.empty:
