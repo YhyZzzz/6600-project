@@ -79,9 +79,9 @@ The two successes show that small nonzero movements can occasionally be predicte
 
 The red vertical line marks the selected forecast's target completion. The full session provides context; only observations available before the marked forecast contribute to its input.
 
-![Observed and one-step predicted prices and returns](visualizations/04_test_prices_and_returns.png)
+![Held-out context, session zoom, model corrections, and errors](visualizations/04_test_prices_and_returns.png)
 
-The price curves overlap because every one-step prediction is anchored to the **observed current close**. They do not constitute a recursively generated future price path or demonstrate profitable return forecasting. The return panel and scatter plot expose errors that are visually hidden by the price scale.
+Panel A shows the full-period observed price context. Panels B–E use a full trading session at the chronological midpoint of the test sessions, selected without examining model errors. Panel B compares the observed next close with last-close persistence. Panel C plots each model's forecast correction to the current close in **cents**, making small model differences visible. Panel D keeps observed and predicted returns on the same basis-point scale. Panel E reports the reduction in absolute price error versus persistence; positive values favor the model. All one-step price forecasts remain anchored to the **observed current close**, so price tracking alone does not establish useful return predictability. The models, selected seeds, and reported test metrics are unchanged.
 
 ## 2. Failure analysis
 

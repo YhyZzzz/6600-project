@@ -8,7 +8,7 @@
 
 Both bars must belong to the same regular trading session and be exactly 15 minutes apart. A bar timestamp marks its start; the input becomes available only after its interval completes. The core question is whether adding causal GARCH(1,1) volatility features improves an LSTM relative to the same LSTM using market features alone. A variance forecast represents uncertainty, not the direction of a price move.
 
-**Motivation.** This project connects econometric volatility modeling with neural sequence learning. It extends the earlier GARCH and machine-learning stock-prediction project described in the supplied README to SPY, a longer history, and a stricter chronological evaluation. We want to learn whether modeling changing volatility helps a neural forecast rather than relying on price-level fit. Earlier thesis results are not evidence of an advantage on this dataset.
+**Motivation.** This project connects econometric volatility modeling with neural sequence learning to forecast SPY intraday returns. Using 15-minute OHLCV observations and a chronological evaluation, we test whether modeling changing volatility improves an LSTM forecast. Return prediction and simple persistence baselines provide a direct way to assess the contribution of volatility features.
 
 **Scope.** One instrument, one primary horizon, and two small neural models: OHLCV-feature LSTM and GARCH-feature LSTM. Compare them with zero-return persistence and ridge regression. EGARCH/GJR-GARCH, attention, longer horizons, and trading simulations are optional extensions, not requirements for the core semester deliverable.
 
