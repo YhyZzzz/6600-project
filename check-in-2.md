@@ -107,10 +107,9 @@ Volatility groups use trailing-volatility cutoffs fitted on training inputs (7.6
 
 ### What I will try next for Check-in 3
 
-1. **Tune the existing LSTM on validation folds:** compare 26/52/100-bar windows, a small hidden-size/layer grid, and learning rates. Compare MSE with Huber loss, and inspect tail errors alongside aggregate RMSE. Keep the baseline files and metrics as a fixed reference.
-2. **Separate the volatility-feature ablations:** compare variance-only, residual-only, coefficient-only, and combined features. Test training-fitted intraday deseasonalization before adding more GARCH families or attention.
-3. **Evaluate adaptation and a longer horizon:** compare a fixed network with a predeclared expanding-window retraining schedule, and assess 30/60-minute targets or a distinct variance-forecasting task. Report return and volatility forecasts separately.
-4. **Protect the next evaluation:** perform changes using validation or nested chronological folds. The 2025–September 2026 test has now been examined; reserve newly collected later data as a new untouched evaluation slice before making stronger performance claims.
+1. **Feature ablation with a fixed LSTM:** keep the LSTM architecture and training settings fixed while comparing variance, standardized-residual, and rolling-coefficient features individually and in combination. Identify which features are worth retaining, then conduct limited experiments on input-sequence length and learning rate.
+2. **Recent training windows and rolling updates:** compare training on all available history with training on recent historical windows, and evaluate periodic retraining as new observations become available. Use chronological validation during 2023–2024 to select the training-history length and update schedule. Each update must use only information available at that time.
+3. **Network comparisons:** retain LSTM as the reference model and add TCN plus one Transformer-based architecture, to be selected in the next stage. Compare the networks using the same feature set, chronological splits, forecast horizon, fixed random seeds, and comparable tuning budgets.
 
 This check-in intentionally stops at a readable, reproducible LSTM baseline. It does not optimize a final model or claim trading profitability.
 
