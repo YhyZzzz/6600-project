@@ -5,3 +5,9 @@ __pycache__/
 .venv/
 .env
 data/
+.venv-*/
+
+# Local datasets and videos
+data/
+*.parquet
+*.mp4

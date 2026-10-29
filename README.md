@@ -2,25 +2,39 @@
 
 A DSAN 6600 project investigating whether volatility information from GARCH-family models improves deep learning forecasts of SPY using **15-minute OHLCV data over 2016–2026**.
 
-**Status:** Research design and data acquisition scaffold. The repository currently contains an Alpaca download script; preprocessing, models, evaluation, and results are planned. No predictive or trading performance is claimed.
+**Status:** Check-in 2 baseline implemented and executed. The single [pipeline notebook](scripts/02_lstm_garch_baseline.ipynb) compares LSTM / G-LSTM / GT-LSTM / GET-LSTM models on SPY, with causal preprocessing and held-out evaluation. See [Check-in 2 results and failure analysis](check-in-2.md).
 
-## Motivation and connection to the original project
+## Run the baseline
 
-This project extends my graduation thesis, *Stock Price Prediction Based on GARCH and Machine Learning Models*. That study used CSI 500 five-minute observations from April 2021 to April 2023 and compared an LSTM with hybrid models incorporating rolling GARCH, EGARCH, and TGARCH parameter estimates.
+Use **Python 3.12** and a separate environment from the earlier Check-in 1 environment:
 
-The new project retains the combination of econometric volatility modeling and neural sequence learning while changing the asset, interval, and evaluation design:
+```bash
+python3.12 -m venv .venv-baseline
+source .venv-baseline/bin/activate
+python -m pip install -r requirements-baseline.txt
+```
 
-| Dimension | Graduation project | New project |
-| --- | --- | --- |
-| Asset | CSI 500 index | SPY, an ETF tracking the S&P 500 |
-| Sampling | 5-minute bars | 15-minute bars |
-| Period | 2021–2023 | 2016–2026, subject to observed coverage |
-| Prediction | Closing prices; additional multi-step experiments | Future log returns, with reconstructed closing prices |
-| Hybrid inputs | Rolling GARCH-family parameter estimates | Causal volatility forecasts, residuals, and parameter estimates |
-| Evaluation | Chronological train/test comparison | Validation, a held-out test, and walk-forward evaluation |
-| Main extension | Multiple volatility models combined with LSTM | Leakage controls, market-regime analysis, and feature ablations |
+Open `scripts/02_lstm_garch_baseline.ipynb`, select this environment as the kernel, and Run All. Start from the repository root or `scripts/`. Place the existing snapshot at `data/spy_15min_2016_2026.parquet`; this run does not call a market-data API. Rolling GARCH fits are cached using the source checksum and feature-code/config fingerprint. Set `REBUILD_GARCH = True` in the notebook to regenerate them.
 
-The thesis motivates the hypothesis; its findings are not evidence that the same advantage will hold for SPY.
+The executed baseline uses training 2016–2022, validation 2023–2024, and test 2025–September 2026. Neural weights and scalers remain frozen during testing; GARCH estimates update using prior observed data. The broader design below includes later extensions such as quarterly retraining and attention, which are not part of this baseline.
+
+| Location | Contents |
+| --- | --- |
+| `scripts/02_lstm_garch_baseline.ipynb` | Entire processing, training, evaluation, and plotting pipeline |
+| `data/spy_15min_2016_2026.parquet` | Supplied raw snapshot, unchanged |
+| `data/intermediate/` | Session-cleaned bars, features, GARCH fit log, sequence arrays, scalers |
+| `data/models/` | LSTM checkpoints and ridge coefficients |
+| `data/results/` | Metrics, predictions, example rows, manifests, and training logs |
+| `visualizations/` | Six exported result figures |
+| `check-in-2.md` | Measured results, qualitative examples, failures, and Check-in 3 plans |
+
+The root-level Parquet copy was consolidated into `data/`; its SHA-256 is unchanged. `data/` is ignored by Git, so these generated artifacts remain local. The earlier audit notebook remains in its existing location under `scripts/`.
+
+## Motivation
+
+SPY intraday forecasting provides a setting for testing whether explicit volatility information helps a neural sequence model predict short-horizon returns. The project combines GARCH-family variance estimates with an LSTM and evaluates their contribution on a chronological held-out set.
+
+The baseline compares market-feature LSTM, GARCH-LSTM, GARCH/GJR-LSTM, and GARCH/GJR/EGARCH-LSTM variants using 15-minute OHLCV data. All models share the same forecast origins and evaluation protocol. Improved accuracy from additional volatility features is a hypothesis to test, not an assumed outcome.
 
 ## Research questions
 
@@ -83,7 +97,7 @@ C_hat[t+h]  = C[t] * exp(y_hat[t, h])
 
 Use `h = 1` (15 minutes) as the primary horizon. Add `h = 2` and `h = 4` (30 and 60 minutes) as secondary experiments using direct horizon-specific predictions. Retain a sample only when every required target bar is consecutive and within the same trading session. Comparisons across horizons should also report results on a common eligible sample.
 
-Return prediction avoids using price-level fit alone as evidence of predictability. Reconstructed price errors remain useful for comparison with the original thesis. A GARCH variance forecast is a feature describing uncertainty, not a directional return forecast.
+Return prediction avoids using price-level fit alone as evidence of predictability. Reconstructed price errors provide a secondary view of forecast accuracy in price units. A GARCH variance forecast is a feature describing uncertainty, not a directional return forecast.
 
 ## Proposed methodology
 
@@ -146,9 +160,9 @@ An optional trading simulation must execute no earlier than the next bar open an
 Use Python 3.10 or newer. From the repository root:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
+python3.12 -m venv .venv-download
+source .venv-download/bin/activate
+python -m pip install alpaca-py pandas pyarrow python-dotenv
 cp .env.example .env
 ```
 
@@ -174,23 +188,32 @@ python scripts/fetch_spy.py \
 
 The script interprets dates in America/New_York, advances the requested end date by one day, and caps the query end at the current time minus 16 minutes. It requests data in yearly chunks, deduplicates timestamps, and writes Parquet. It does not guarantee complete coverage, remove extended-hours bars, validate exchange sessions, or provide a modeling pipeline. Inspect the printed timestamp range and audit the saved data before use. If access fails, check account entitlements rather than silently switching feeds.
 
-The current requirements cover acquisition only: `alpaca-py`, `pandas`, `pyarrow`, and `python-dotenv`. Modeling dependencies and pinned versions will be added with the implementation. No training or evaluation command is available yet.
+The downloader needs `alpaca-py`, `pandas`, `pyarrow`, and `python-dotenv`. `requirements-baseline.txt` pins the executed modeling environment; the older `requirements.txt` describes the Check-in 1 audit environment. Use the baseline notebook above for training and evaluation.
 
 ## Repository and planned deliverables
 
-Current tracked project files:
+Main project files and local output directories:
 
 ```text
 6600-project/
 ├── README.md
+├── check-in-1.md
+├── check-in-2.md
 ├── requirements.txt
-├── .env.example
-├── .gitignore
+├── requirements-baseline.txt
+├── data/                         # Local data and generated numeric artifacts
+│   ├── spy_15min_2016_2026.parquet
+│   ├── intermediate/
+│   ├── models/
+│   └── results/
+├── visualizations/               # Exported PNG figures
 └── scripts/
-    └── fetch_spy.py
+    ├── fetch_spy.py
+    ├── 01_data_audit.ipynb
+    └── 02_lstm_garch_baseline.ipynb
 ```
 
-Planned additions include preprocessing and feature modules, model configurations, training/evaluation scripts, exploratory notebooks, and reports. Preserve dataset manifests, split definitions, fitted preprocessing objects, random seeds, dependency versions, predictions, and checkpoints so each reported result can be reproduced.
+The baseline keeps all pipeline code in one notebook. Dataset manifests, split definitions, fitted scaling values, random seeds, dependency versions, predictions, and checkpoints are saved under `data/` so each reported result can be inspected and reproduced. The following milestones describe the broader semester roadmap.
 
 ### Milestones
 
